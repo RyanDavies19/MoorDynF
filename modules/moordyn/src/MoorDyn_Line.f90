@@ -1277,6 +1277,8 @@ CONTAINS
                   Line%Bs(:,i  ) = Line%Bs(:,i  ) +  Mforce_i
                   Line%Bs(:,i+1) = Line%Bs(:,i+1) +  Mforce_ip1
                   
+               else 
+                  Kurvi = GetCurvature(Line%lstr(0)+Line%lstr(1), Line%q(:,0), Line%q(:,1)) ! curvature (assumed same as Node 1)
                end if
             
             ! end node A case (only if attached to a Rod, i.e. a cantilever rather than pinned point)
@@ -1300,11 +1302,13 @@ CONTAINS
                   Line%Bs(:,i-1) = Line%Bs(:,i-1) +  Mforce_im1
                   Line%Bs(:,i  ) = Line%Bs(:,i  ) +  Mforce_i
                   
+               else 
+                  Kurvi = GetCurvature(Line%lstr(N-1)+Line%lstr(N), Line%q(:,N-1), Line%q(:,N))  ! curvature (asssumed same as node N-1)
                end if
             
             else   ! internal node
             
-               Kurvi = GetCurvature(Line%lstr(i)+Line%lstr(i+1), Line%qs(:,i), Line%qs(:,i+1))  ! curvature
+               Kurvi = GetCurvature(Line%lstr(i)+Line%lstr(i+1), Line%qs(:,i), Line%qs(:,i+1))  ! curvature (double line length to account for curvature function set up for rods)
                
                pvec = cross_product(Line%qs(:,i), Line%qs(:,i+1))  ! get direction of bending radius axis
                
@@ -1323,11 +1327,35 @@ CONTAINS
                Line%Bs(:,i+1) = Line%Bs(:,i+1) + Mforce_ip1
                
             end if
-                       
+
             ! record curvature at node
             Line%Kurv(i) = Kurvi
             
          end do   ! for i=0,N (looping through nodes)
+
+      else ! just calculate the curvature for output at every node
+         do i=0,N
+            ! end node A case (only if attached to a Rod, i.e. a cantilever rather than pinned point)
+            if (i==0) then
+               if (Line%endTypeA > 0) then ! if attached to Rod i.e. cantilever point 
+                  Kurvi = GetCurvature(Line%lstr(1), Line%q(:,0), Line%qs(:,1))  ! curvature (assuming rod angle is node angle which is middle of if there was a segment -1/2)
+               else 
+                  Kurvi = GetCurvature(Line%lstr(0)+Line%lstr(1), Line%q(:,0), Line%q(:,1)) ! curvature (assumed same as node 1)
+               end if
+            ! end node A case (only if attached to a Rod, i.e. a cantilever rather than pinned point)
+            else if (i==N) then
+               if (Line%endTypeB > 0) then ! if attached to Rod i.e. cantilever point
+                  Kurvi = GetCurvature(Line%lstr(N), Line%qs(:,N), Line%q(:,N))  ! curvature (assuming rod angle is node angle which is middle of if there was a segment -1/2
+               else 
+                  Kurvi = GetCurvature(Line%lstr(N-1)+Line%lstr(N), Line%q(:,N-1), Line%q(:,N))  ! curvature (asssumed same as node N-1)
+               end if
+            else   ! internal node
+               Kurvi = GetCurvature(Line%lstr(i)+Line%lstr(i+1), Line%qs(:,i), Line%qs(:,i+1))  ! curvature (double line length to account for curvature function set up for rods) 
+            end if
+            ! record curvature at node
+            Line%Kurv(i) = Kurvi  
+         end do   ! for i=0,N (looping through nodes)
+
       end if  ! if EI > 0
          
          

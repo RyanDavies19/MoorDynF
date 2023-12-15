@@ -78,12 +78,13 @@ MODULE MoorDyn_IO
   INTEGER, PARAMETER             :: MY        =   24
   INTEGER, PARAMETER             :: MZ        =   25
   INTEGER, PARAMETER             :: Sub       =   26
-  INTEGER, PARAMETER             :: TenA      =   27 
-  INTEGER, PARAMETER             :: TenB      =   28 
+  INTEGER, PARAMETER             :: Kurv      =   27 
+  INTEGER, PARAMETER             :: TenA      =   28 
+  INTEGER, PARAMETER             :: TenB      =   29
 
 
   ! List of units corresponding to the quantities parameters for QTypes
-  CHARACTER(ChanLen), PARAMETER :: UnitList(0:26) =  (/ &
+  CHARACTER(ChanLen), PARAMETER :: UnitList(0:27) =  (/ &
                                "(s)       ","(m)       ","(m)       ","(m)       ", &
                                "(deg)     ","(deg)     ","(deg)     ", &
                                "(m/s)     ","(m/s)     ","(m/s)     ", &
@@ -91,7 +92,7 @@ MODULE MoorDyn_IO
                                "(m/s2)    ","(m/s2)    ","(m/s2)    ", &
                                "(deg/s2)  ","(deg/s2)  ","(deg/s2)  ", &
                                "(N)       ","(N)       ","(N)       ","(N)       ", &
-                               "(Nm)      ","(Nm)      ","(Nm)      ","(frac)    "/)
+                               "(Nm)      ","(Nm)      ","(Nm)      ","(frac)    ", "(m^-1)    "/)
 
   CHARACTER(28), PARAMETER  :: OutPFmt = "( I4, 3X,A 10,1 X, A10 )"   ! Output format parameter output list.
   CHARACTER(28), PARAMETER  :: OutSFmt = "ES10.3E2"
@@ -690,6 +691,9 @@ CONTAINS
         ELSE IF (qVal == 'SUB') THEN
           p%OutParam(I)%QType = Sub
           p%OutParam(I)%Units = UnitList(Sub)
+        ELSE IF (qVal == 'CURV') THEN
+          p%OutParam(I)%QType = Kurv
+          p%OutParam(I)%Units = UnitList(Kurv)
         ELSE
           CALL DenoteInvalidOutput(p%OutParam(I)) ! flag as invalid
           CALL WrScr('Warning: invalid output specifier '//trim(OutListTmp)//'.  Quantity type not recognized.')
@@ -1365,7 +1369,9 @@ CONTAINS
                   CASE (TenA)
                      y%WriteOutput(I) = Line_GetNodeTen(m%LineList(p%OutParam(I)%ObjID), 0, p) 
                   CASE (TenB)
-                     y%WriteOutput(I) = Line_GetNodeTen(m%LineList(p%OutParam(I)%ObjID), m%LineList(p%OutParam(I)%ObjID)%N, p)  
+                     y%WriteOutput(I) = Line_GetNodeTen(m%LineList(p%OutParam(I)%ObjID), m%LineList(p%OutParam(I)%ObjID)%N, p)
+                  CASE (Kurv)
+                     y%WriteOutput(I) = m%LineList(p%OutParam(I)%ObjID)%Kurv(p%OutParam(I)%NodeID)
                   CASE DEFAULT
                     y%WriteOutput(I) = 0.0_ReKi
                     ErrStat = ErrID_Warn
